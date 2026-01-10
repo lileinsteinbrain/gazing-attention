@@ -2,12 +2,12 @@ from flask import Flask, request, send_from_directory
 import serial
 import time
 
-# ====== 串口配置 ======
+
 SERIAL_PORT = '/dev/cu.usbserial-1140'
 BAUD = 115200
 
 ser = serial.Serial(SERIAL_PORT, BAUD, timeout=1)
-time.sleep(2)  # 等 Arduino reset
+time.sleep(2) 
 
 app = Flask(__name__, static_folder=".")
 
