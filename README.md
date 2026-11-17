@@ -1,30 +1,38 @@
-## What this is
-An HCI system that models observation as a measurable, time-dependent force, translating accumulated perceptual pressure into state-based physical response.
+# Gazing Attention (White Mask: physical)
 
-## Input
-- Visual observation from a camera
-- Distance and proximity sensing
-- Ambient light intensity
+**A wearable mask that feels being looked at. Attention builds up like pressure, and the mask reacts physically when it becomes too much.**
 
-## Processing
-- Perceptual inputs are normalized and aggregated over time
-- Observation is treated as continuous pressure rather than discrete events
-- An internal system state evolves through accumulation, weighting, and uncertainty
-- State transitions are resolved through a finite set of regimes rather than linear scaling
+Part of the **White Mask** series → see also [whitemask-phasefield](https://github.com/lileinsteinbrain/whitemask-phasefield) (simulation) and [white-membrane-proto](https://github.com/lileinsteinbrain/white-membrane-proto) (XR prototype).
 
-## Output
-- Mechanical rotation and vibration mounted on the mask
-- Physical responses express internal state resolution rather than feedback signals
+## The idea
+Being watched is not a single event. It accumulates. This project models observation as a force that builds over time: a glance barely registers, a sustained stare slowly pushes the mask into a different state. When observation fades, the mask gradually recovers.
 
-## What currently works
-- Sustained observation produces different system behavior than brief or transient interaction
-- Changes in observation pressure lead to distinct state transitions
-- Physical response makes internal system tension perceptible at the boundary of the body
+## How it works
+```
+ Webcam (motion → face → gaze direction) ─┐
+ Distance sensor (how close someone is) ──┼─► observation pressure λ ─► coherence σ
+ Light sensor (how exposed the wearer is) ┘     (accumulates, leaks,     │
+                                                 recovers over time)    ▼
+                                      state: COLLAPSE  ·  IDLE  ·  REPHASE
+                                                 │
+                       vibration motor · small fan · servo that turns the mask · OLED label
+```
+- **Camera pipeline** in three levels of sophistication: plain motion (`lv1`), face + motion (`lv2`), gaze vector via MediaPipe or WebGazer (`lv3`)
+- **Bridge:** `send_lambda.py` forwards the camera's λ value to the microcontroller over serial
+- **Mask (ESP32):** combines camera, distance (VL53L0X) and light (BH1750) into σ; low σ = *collapse*, high σ = *rephase*, with hysteresis so states don't flicker
 
-## What’s unfinished
-- Formal parameterization of observation pressure and state transition thresholds
-- Extended testing of how users interpret state-based physical response over time
-- The wearable mask itself functions as a prototype output, but its current physical implementation requires refinement and stabilization
+## What's in this repo
+| Path | What it is |
+|---|---|
+| `lv1_motion_proxy.py` | Observation = overall motion in the camera image |
+| `lv2_face_motion_proxy.py` | Observation = motion around a detected face |
+| `lv3_gaze_vector.py`, `lv3_webgazer.js` | Observation = where someone is actually looking |
+| `send_lambda.py` | Small Flask server that sends λ to the mask over serial |
+| `whitemask.ino` | Mask firmware: sensor fusion, state machine, actuators |
 
-## Why it matters
-WhiteMask reframes perception as an accumulative, time-based computational state, challenging event-driven models of sensing and interaction in wearable systems.
+## Status
+Working prototype.
+- ✅ Sustained observation produces different behaviour from brief glances
+- ✅ Physical response makes the internal "tension" perceptible on the body
+- 🔲 Thresholds are hand-tuned; the wearable itself needs mechanical refinement
+- 🔲 No user study yet on how people read the mask's responses
